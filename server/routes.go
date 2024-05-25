@@ -1,10 +1,8 @@
 package server
 
 import (
-	"halosuster/internal/record"
-	"halosuster/internal/user"
-	"halosuster/internal/image"
-	"halosuster/pkg/response"
+	"belimang/internal/merchant"
+	"belimang/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,33 +16,16 @@ func NewRoute(engine *gin.Engine, db *sqlx.DB) {
 
 	router.GET("ping", pingHandler)
 
-	initializeUserHandler(db, router)
-	initializeImageHandler(router)
-	initializeRecordHandler(db, router)
+	initializeMerchantHandler(db, router)
 }
 
-func initializeUserHandler(db *sqlx.DB, router *gin.RouterGroup) {
+func initializeMerchantHandler(db *sqlx.DB, router *gin.RouterGroup) {
 	// Initialize all necessary dependecies
-	userRepo := user.NewUserRepository(db)
-	userUc := user.NewUserUsecase(userRepo)
-	userH := user.NewUserHandler(userUc)
+	merchantRepo := merchant.NewMerchantRepository(db)
+	merchantUc := merchant.NewMerchantUsecase(merchantRepo)
+	merchantH := merchant.NewMerchantHandler(merchantUc)
 
-	userH.Router(router)
-}
-
-func initializeImageHandler(router *gin.RouterGroup) {
-	imageH := image.NewImageHandler()
-
-	imageH.Router(router)
-}
-
-func initializeRecordHandler(db *sqlx.DB, router *gin.RouterGroup) {
-	// Initalize all dependecies
-	recordRepo := record.NewRecordRepo(db)
-	recordUsecase := record.NewRecordUsecase(recordRepo)
-	recordHandler := record.NewRecordHandler(recordUsecase)
-
-	recordHandler.Router(router)
+	merchantH.Router(router)
 }
 
 func NoRouteHandler(ctx *gin.Context) {

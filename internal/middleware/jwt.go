@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"errors"
-	"halosuster/pkg/jwt"
-	"halosuster/pkg/response"
+	"belimang/pkg/jwt"
+	"belimang/pkg/response"
 	"net/http"
 	"strings"
 
