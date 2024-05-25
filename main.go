@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"halosuster/config"
-	"halosuster/server"
+	"belimang/config"
+	"belimang/server"
 	"log"
 	"log/slog"
 	"os"

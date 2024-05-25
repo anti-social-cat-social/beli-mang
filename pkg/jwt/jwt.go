@@ -42,7 +42,7 @@ func GenerateToken(data TokenData) (string, error) {
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(expirationTime) * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "halosuster",
+			Issuer:    "belimang",
 			Subject:   data.Name,
 			ID:        data.ID,
 		},

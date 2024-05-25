@@ -38,6 +38,6 @@ func HashPassword(password string) (string, error) {
 }
 
 // Check hashed password
-func CheckPassword(hashed *string, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(*hashed), []byte(password))
+func CheckPassword(hashed string, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashed), []byte(password))
 }

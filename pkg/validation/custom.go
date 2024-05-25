@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"halosuster/pkg/helper"
+	"belimang/pkg/helper"
 	"log"
 	"regexp"
 	"strconv"

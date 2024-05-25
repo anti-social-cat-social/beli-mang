@@ -1,10 +1,9 @@
 package server
 
 import (
-	"halosuster/internal/record"
-	"halosuster/internal/user"
-	"halosuster/internal/image"
-	"halosuster/pkg/response"
+	"belimang/internal/user"
+	// "belimang/internal/image"
+	"belimang/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,8 +18,8 @@ func NewRoute(engine *gin.Engine, db *sqlx.DB) {
 	router.GET("ping", pingHandler)
 
 	initializeUserHandler(db, router)
-	initializeImageHandler(router)
-	initializeRecordHandler(db, router)
+	// initializeImageHandler(router)
+	// initializeRecordHandler(db, router)
 }
 
 func initializeUserHandler(db *sqlx.DB, router *gin.RouterGroup) {
@@ -32,20 +31,20 @@ func initializeUserHandler(db *sqlx.DB, router *gin.RouterGroup) {
 	userH.Router(router)
 }
 
-func initializeImageHandler(router *gin.RouterGroup) {
-	imageH := image.NewImageHandler()
+// func initializeImageHandler(router *gin.RouterGroup) {
+// 	imageH := image.NewImageHandler()
 
-	imageH.Router(router)
-}
+// 	imageH.Router(router)
+// }
 
-func initializeRecordHandler(db *sqlx.DB, router *gin.RouterGroup) {
-	// Initalize all dependecies
-	recordRepo := record.NewRecordRepo(db)
-	recordUsecase := record.NewRecordUsecase(recordRepo)
-	recordHandler := record.NewRecordHandler(recordUsecase)
+// func initializeRecordHandler(db *sqlx.DB, router *gin.RouterGroup) {
+// 	// Initalize all dependecies
+// 	recordRepo := record.NewRecordRepo(db)
+// 	recordUsecase := record.NewRecordUsecase(recordRepo)
+// 	recordHandler := record.NewRecordHandler(recordUsecase)
 
-	recordHandler.Router(router)
-}
+// 	recordHandler.Router(router)
+// }
 
 func NoRouteHandler(ctx *gin.Context) {
 	response.GenerateResponse(ctx, http.StatusNotFound, response.WithMessage("Page not found"))
