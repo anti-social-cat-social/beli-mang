@@ -1,0 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE IF NOT EXISTS orders (
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+order_estimation_id UUID NOT NULL REFERENCES order_estimation(id),
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
