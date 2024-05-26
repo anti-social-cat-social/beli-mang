@@ -2,7 +2,7 @@ package validation
 
 import (
 	"errors"
-	localError "halosuster/pkg/error"
+	localError "belimang/pkg/error"
 	"regexp"
 	"strconv"
 	"strings"

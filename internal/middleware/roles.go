@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"halosuster/pkg/response"
+	"belimang/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

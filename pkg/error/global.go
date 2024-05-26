@@ -1,7 +1,7 @@
 package localError
 
 import (
-	"halosuster/pkg/logger"
+	"belimang/pkg/logger"
 	"fmt"
 	"net/http"
 	"runtime"

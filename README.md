@@ -8,7 +8,7 @@ This repo should be tested 7 day from now.
 Clone project
 
 ```bash
-  git clone https://github.com/anti-social-cat-social/halosuster.git my-project
+  git clone https://github.com/anti-social-cat-social/belimang.git my-project
   cd my-project
 ```
 
