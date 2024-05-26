@@ -2,6 +2,8 @@ package server
 
 import (
 	"belimang/internal/merchant"
+	"belimang/internal/user"
+	// "belimang/internal/image"
 	"belimang/pkg/response"
 	"net/http"
 
@@ -17,6 +19,9 @@ func NewRoute(engine *gin.Engine, db *sqlx.DB) {
 	router.GET("ping", pingHandler)
 
 	initializeMerchantHandler(db, router)
+	initializeUserHandler(db, router)
+	// initializeImageHandler(router)
+	// initializeRecordHandler(db, router)
 }
 
 func initializeMerchantHandler(db *sqlx.DB, router *gin.RouterGroup) {
@@ -26,6 +31,15 @@ func initializeMerchantHandler(db *sqlx.DB, router *gin.RouterGroup) {
 	merchantH := merchant.NewMerchantHandler(merchantUc)
 
 	merchantH.Router(router)
+}
+
+func initializeUserHandler(db *sqlx.DB, router *gin.RouterGroup) {
+	// Initialize all necessary dependecies
+	userRepo := user.NewUserRepository(db)
+	userUc := user.NewUserUsecase(userRepo)
+	userH := user.NewUserHandler(userUc)
+
+	userH.Router(router)
 }
 
 func NoRouteHandler(ctx *gin.Context) {
