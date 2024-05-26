@@ -69,3 +69,49 @@ type CreateItemDTO struct {
 type CreateItemResponse struct {
 	ItemID string `json:"itemId"`
 }
+
+type Sort string
+
+const (
+	Asc  Sort = "asc"
+	Desc Sort = "desc"
+)
+
+type GetMerchantQueryParams struct {
+	MerchantID			string 	`form:"merchantId"`
+	Limit       		int    	`form:"limit"`
+	Offset      		int    	`form:"offset"`
+	Name        		string 	`form:"name"`
+	MerchantCategory	MerchantCategories	`form:"merchantCategory"`
+	CreatedAt 			Sort	`form:"createdAt"`
+}
+
+type GetMerchantResponse struct {
+	MerchantID			string 	`json:"merchantId"`
+	Name            	string	`json:"name"`
+	MerchantCategory 	MerchantCategories	`json:"merchantCategory"`
+	ImageUrl 			string	`json:"imageUrl"`
+	Location			Location `json:"location"`
+	CreatedAt           string 	`json:"createdAt"`
+}
+
+func FormatGetMerchantResponse(merchants []Merchant) []GetMerchantResponse {
+	getMerchantResponse := []GetMerchantResponse{}
+
+	for _, merchant := range merchants {
+		row := GetMerchantResponse{
+			MerchantID: merchant.ID,
+			Name: merchant.Name,
+			MerchantCategory: merchant.MerchantCategory,
+			ImageUrl: merchant.ImageUrl,
+			Location: Location{
+				Lat: merchant.LocationLat,
+				Long: merchant.LocationLong,
+			},
+			CreatedAt: merchant.CreatedAt.Format(time.RFC3339),
+		}
+		getMerchantResponse = append(getMerchantResponse, row)
+	}
+
+	return getMerchantResponse
+}

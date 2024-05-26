@@ -6,11 +6,13 @@ import (
 	// "strconv"
 	// "time"
 	"github.com/google/uuid"
+	// "log"
 )
 
 type IMerchantUsecase interface {
 	CreateMerchant(req CreateMerchantDTO) (*CreateMerchantResponse, *localError.GlobalError)
 	CreateItem(merchantId string, req CreateItemDTO) (*CreateItemResponse, *localError.GlobalError)
+	FindAllMerchants(query GetMerchantQueryParams) ([]GetMerchantResponse, *localError.GlobalError)
 }
 
 type merchantUsecase struct {
@@ -71,3 +73,15 @@ func (uc *merchantUsecase) CreateItem(merchantId string, req CreateItemDTO) (*Cr
 
 	return &response, nil
 }
+
+func (uc *merchantUsecase) FindAllMerchants(query GetMerchantQueryParams) ([]GetMerchantResponse, *localError.GlobalError) {
+	merchants, err := uc.repo.FindAllMerchants(query)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := FormatGetMerchantResponse(merchants)
+
+	return resp, nil
+}
+
