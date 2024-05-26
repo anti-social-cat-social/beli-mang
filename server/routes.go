@@ -1,6 +1,7 @@
 package server
 
 import (
+	"belimang/internal/merchant"
 	"belimang/internal/user"
 	// "belimang/internal/image"
 	"belimang/pkg/response"
@@ -17,9 +18,19 @@ func NewRoute(engine *gin.Engine, db *sqlx.DB) {
 
 	router.GET("ping", pingHandler)
 
+	initializeMerchantHandler(db, router)
 	initializeUserHandler(db, router)
 	// initializeImageHandler(router)
 	// initializeRecordHandler(db, router)
+}
+
+func initializeMerchantHandler(db *sqlx.DB, router *gin.RouterGroup) {
+	// Initialize all necessary dependecies
+	merchantRepo := merchant.NewMerchantRepository(db)
+	merchantUc := merchant.NewMerchantUsecase(merchantRepo)
+	merchantH := merchant.NewMerchantHandler(merchantUc)
+
+	merchantH.Router(router)
 }
 
 func initializeUserHandler(db *sqlx.DB, router *gin.RouterGroup) {
@@ -30,21 +41,6 @@ func initializeUserHandler(db *sqlx.DB, router *gin.RouterGroup) {
 
 	userH.Router(router)
 }
-
-// func initializeImageHandler(router *gin.RouterGroup) {
-// 	imageH := image.NewImageHandler()
-
-// 	imageH.Router(router)
-// }
-
-// func initializeRecordHandler(db *sqlx.DB, router *gin.RouterGroup) {
-// 	// Initalize all dependecies
-// 	recordRepo := record.NewRecordRepo(db)
-// 	recordUsecase := record.NewRecordUsecase(recordRepo)
-// 	recordHandler := record.NewRecordHandler(recordUsecase)
-
-// 	recordHandler.Router(router)
-// }
 
 func NoRouteHandler(ctx *gin.Context) {
 	response.GenerateResponse(ctx, http.StatusNotFound, response.WithMessage("Page not found"))
