@@ -1,10 +1,8 @@
 package merchant
 
 import (
-	"errors"
+	// "errors"
 	localError "belimang/pkg/error"
-	"belimang/pkg/hasher"
-	tokenizer "belimang/pkg/jwt"
 	// "strconv"
 	// "time"
 	"github.com/google/uuid"
@@ -41,7 +39,7 @@ func (uc *merchantUsecase) CreateMerchant(req CreateMerchantDTO) (*CreateMerchan
 	}
 
 	response := CreateMerchantResponse{
-		MerchantID: merchant.ID
+		MerchantID: merchant.ID,
 	}
 
 	return &response, nil
@@ -67,8 +65,8 @@ func (uc *merchantUsecase) CreateItem(merchantId string, req CreateItemDTO) (*Cr
 		return nil, err
 	}
 
-	response := CreateMerchantResponse{
-		ItemID: item.ID
+	response := CreateItemResponse{
+		ItemID: item.ID,
 	}
 
 	return &response, nil

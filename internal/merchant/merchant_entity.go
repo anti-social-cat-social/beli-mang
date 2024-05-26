@@ -18,14 +18,14 @@ type Merchant struct {
 	Name            	string	`json:"name" db:"name"`
 	MerchantCategory 	MerchantCategories	`json:"merchantCategory" db:"merchant_category"`
 	ImageUrl 			string	`json:"imageUrl" db:"image_url"`
-	LocationLat 		float	`json:"locationLat" db:"location_lat"`
-	LocationLong 		float	`json:"locationLong" db:"location_long"`
+	LocationLat 		float32	`json:"locationLat" db:"location_lat"`
+	LocationLong 		float32	`json:"locationLong" db:"location_long"`
 	CreatedAt           time.Time 	`json:"createdAt" db:"created_at"`	
 }
 
 type Location struct {
-	Lat float `json:"lat" binding:"required"`
-	Long float `json:"long" binding:"required"`
+	Lat float32 `json:"lat" binding:"required"`
+	Long float32 `json:"long" binding:"required"`
 }
 
 type CreateMerchantDTO struct {
@@ -54,7 +54,7 @@ type Item struct {
 	MerchantID          string	`json:"merchantId" db:"merchant_id"`
 	Name            	string	`json:"name" db:"name"`
 	ProductCategory 	ProductCategories	`json:"productCategory" db:"product_category"`
-	Price 				integer	`json:"price" db:"price"`
+	Price 				int	`json:"price" db:"price"`
 	ImageUrl 			string	`json:"imageUrl" db:"image_url"`
 	CreatedAt           time.Time 	`json:"createdAt" db:"created_at"`	
 }
@@ -62,7 +62,7 @@ type Item struct {
 type CreateItemDTO struct {
 	Name            	string	`json:"name" binding:"required,min=2,max=30"`
 	ProductCategory 	ProductCategories	`json:"productCategory" binding:"required"`
-	Price				integer	`json:"price" binding:"required,min=1"`
+	Price				int	`json:"price" binding:"required,min=1"`
 	ImageUrl 			string	`json:"imageUrl" binding:"required,url"`
 }
 

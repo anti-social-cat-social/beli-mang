@@ -3,13 +3,12 @@ package merchant
 import (
 	"belimang/internal/middleware"
 	"belimang/internal/user"
-	"belimang/pkg/jwt"
 	"belimang/pkg/response"
 	"belimang/pkg/validation"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
+	// "github.com/go-playground/validator/v10"
 )
 
 type merchantHandler struct {
