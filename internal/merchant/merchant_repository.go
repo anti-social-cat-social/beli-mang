@@ -52,7 +52,7 @@ func (u *merchantRepository) FindMerchantById(merchantId string) (*Merchant, *lo
 
 // Store new merchant to database
 func (u *merchantRepository) CreateMerchant(entity Merchant) *localError.GlobalError {
-	q := "INSERT INTO merchants (name, merchant_category, image_url, location_lat, location_long) values (:name, :merchant_category, :image_url, :location_lat, :location_long);"
+	q := "INSERT INTO merchants (id, name, merchant_category, image_url, location_lat, location_long) values (:id, :name, :merchant_category, :image_url, :location_lat, :location_long);"
 
 	// Insert into database
 	_, err := u.db.NamedExec(q, &entity)
@@ -65,7 +65,7 @@ func (u *merchantRepository) CreateMerchant(entity Merchant) *localError.GlobalE
 
 // Store new item to database
 func (u *merchantRepository) CreateItem(entity Item) *localError.GlobalError {
-	q := "INSERT INTO items (merchant_id, name, product_category, price, image_url) values (:merchant_id, :name, :product_category, :price, :image_url);"
+	q := "INSERT INTO items (id, merchant_id, name, product_category, price, image_url) values (:id, :merchant_id, :name, :product_category, :price, :image_url);"
 
 	// Insert into database
 	_, err := u.db.NamedExec(q, &entity)
