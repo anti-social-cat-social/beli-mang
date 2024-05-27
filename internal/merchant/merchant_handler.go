@@ -28,6 +28,7 @@ func (h *merchantHandler) Router(r *gin.RouterGroup) {
 
 	group.POST("", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)), h.CreateMerchant)
 	group.POST("/:merchantId/items", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)), h.CreateItem)
+	group.GET("", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)), h.FindAllMerchants)
 }
 
 func (h *merchantHandler) CreateMerchant(ctx *gin.Context) {
@@ -67,4 +68,21 @@ func (h *merchantHandler) CreateItem(ctx *gin.Context) {
 	}
 
 	response.GenerateResponse(ctx, 200, response.WithData(*resp))
+}
+
+func (h *merchantHandler) FindAllMerchants(c *gin.Context) {
+	query := GetMerchantQueryParams{}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		res := validation.FormatValidation(err)
+		response.GenerateResponse(c, res.Code, response.WithMessage(res.Message))
+		return
+	}
+
+	merchants, err := h.uc.FindAllMerchants(query)
+	if err != nil {
+		response.GenerateResponse(c, err.Code, response.WithMessage(err.Message))
+		return
+	}
+
+	response.GenerateResponse(c, http.StatusOK, response.WithMessage("Product fetched successfully!"), response.WithData(merchants))
 }

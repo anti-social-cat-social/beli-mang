@@ -3,7 +3,7 @@ package merchant
 import (
 	"database/sql"
 	"errors"
-	// "fmt"
+	"fmt"
 	localError "belimang/pkg/error"
 	"log"
 	// "strings"
@@ -16,6 +16,7 @@ type IMerchantRepository interface {
 	CreateMerchant(entity Merchant) *localError.GlobalError
 	FindMerchantById(merchantId string) (*Merchant, *localError.GlobalError)
 	CreateItem(entity Item) *localError.GlobalError
+	FindAllMerchants(params GetMerchantQueryParams) ([]Merchant, *localError.GlobalError)
 }
 
 type merchantRepository struct {
@@ -74,4 +75,59 @@ func (u *merchantRepository) CreateItem(entity Item) *localError.GlobalError {
 	}
 
 	return nil
+}
+
+func (r *merchantRepository) FindAllMerchants(params GetMerchantQueryParams) ([]Merchant, *localError.GlobalError) {
+	merchants := []Merchant{}
+
+	query := "SELECT * FROM merchants"
+	nwhere := 0
+
+	if params.MerchantID != "" {
+		nwhere += 1
+		query += fmt.Sprintf(" WHERE id = '%s'", params.MerchantID)
+	}
+
+	if params.Name != "" {
+		prefix := "WHERE"
+		if nwhere > 0 {
+			prefix = "AND"
+		}
+		nwhere += 1
+		query += fmt.Sprintf(" %s name ILIKE '%%%s%%'", prefix, params.Name)
+	}
+
+	if params.MerchantCategory == "SmallRestaurant" || params.MerchantCategory == "MediumRestaurant" || params.MerchantCategory == "LargeRestaurant" || params.MerchantCategory == "MerchandiseRestaurant" || params.MerchantCategory == "BoothKiosk" || params.MerchantCategory == "ConvenienceStore" {
+		prefix := "WHERE"
+		if nwhere > 0 {
+			prefix = "AND"
+		}
+		nwhere += 1
+		query += fmt.Sprintf(" %s merchant_category = '%s'", prefix, params.MerchantCategory)
+	}
+
+	if params.CreatedAt == "asc" || params.CreatedAt == "desc" {
+		query += fmt.Sprintf(" ORDER BY created_at %s", params.CreatedAt)
+	}
+
+	if params.Limit != 0 {
+		query += fmt.Sprintf(" LIMIT %d", params.Limit)
+	} else {
+		query += " LIMIT 5"
+	}
+	if params.Offset != 0 {
+		query += fmt.Sprintf(" OFFSET %d", params.Offset)
+	} else {
+		query += " OFFSET 0"
+	}
+
+	// log.Println(query)
+
+	err := r.db.Select(&merchants, query)
+	if err != nil {
+		log.Println(err)
+		return merchants, nil//localError.ErrInternalServer("Failed to find merchants", err)
+	}
+
+	return merchants, nil
 }
