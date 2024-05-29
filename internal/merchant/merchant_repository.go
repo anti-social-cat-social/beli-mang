@@ -1,11 +1,12 @@
 package merchant
 
 import (
+	localError "belimang/pkg/error"
 	"database/sql"
 	"errors"
 	"fmt"
-	localError "belimang/pkg/error"
 	"log"
+
 	// "strings"
 
 	// "github.com/google/uuid"
@@ -13,10 +14,11 @@ import (
 )
 
 type IMerchantRepository interface {
-	CreateMerchant(entity Merchant) *localError.GlobalError
-	FindMerchantById(merchantId string) (*Merchant, *localError.GlobalError)
-	CreateItem(entity Item) *localError.GlobalError
 	FindAllMerchants(params GetMerchantQueryParams) ([]Merchant, *localError.GlobalError)
+	FindMerchantById(merchantId string) (*Merchant, *localError.GlobalError)
+	CreateMerchant(entity Merchant) *localError.GlobalError
+	FindAllItem(params GetItemQueryParam, merchantId string) ([]Item, *localError.GlobalError)
+	CreateItem(entity Item) *localError.GlobalError
 }
 
 type merchantRepository struct {
@@ -62,6 +64,75 @@ func (u *merchantRepository) CreateMerchant(entity Merchant) *localError.GlobalE
 	}
 
 	return nil
+}
+
+// List all item from database
+func (r *merchantRepository) FindAllItem(param GetItemQueryParam, merchantId string) ([]Item, *localError.GlobalError) {
+	// Define emtpy maps of item
+	items := []Item{}
+
+	query := "SELECT * FROM items where 1=1"
+
+	// Filter by merhat ID
+	query += fmt.Sprintf(" AND merchant_id = '%s'", merchantId)
+
+	// Filter by ID
+	if param.ItemID != "" {
+		query += fmt.Sprintf(" AND id = '%s'", param.ItemID)
+	}
+
+	// Filter by Name
+	if param.Name != "" {
+		query += fmt.Sprintf(" name ILIKE '%%%s%%'", param.Name)
+	}
+
+	// Filter by Category
+	validCategories := []ProductCategories{
+		Beverage,
+		Food,
+		Snack,
+		Condiments,
+		Additions,
+	}
+
+	categoryExists := false
+
+	if string(param.ProductCategory) != "" {
+		for _, validCategory := range validCategories {
+			if string(validCategory) == string(param.ProductCategory) {
+				categoryExists = true
+			}
+		}
+	}
+
+	// Filter if category is valid
+	if categoryExists {
+		query += fmt.Sprintf(" AND product_category = '%s'", string(param.ProductCategory))
+	}
+
+	// Sort by created at
+	if param.CreatedAt != "" {
+		query += fmt.Sprintf(" order by created_at %s", string(param.CreatedAt))
+	}
+
+	// Set limit & offset
+	if param.Limit != 0 {
+		query += fmt.Sprintf(" LIMIT %d", param.Limit)
+	} else {
+		query += " LIMIT 5"
+	}
+	if param.Offset != 0 {
+		query += fmt.Sprintf(" OFFSET %d", param.Offset)
+	} else {
+		query += " OFFSET 0"
+	}
+
+	err := r.db.Select(&items, query)
+	if err != nil {
+		return items, localError.ErrInternalServer(err.Error(), err)
+	}
+
+	return items, nil
 }
 
 // Store new item to database
@@ -126,7 +197,7 @@ func (r *merchantRepository) FindAllMerchants(params GetMerchantQueryParams) ([]
 	err := r.db.Select(&merchants, query)
 	if err != nil {
 		log.Println(err)
-		return merchants, nil//localError.ErrInternalServer("Failed to find merchants", err)
+		return merchants, nil //localError.ErrInternalServer("Failed to find merchants", err)
 	}
 
 	return merchants, nil

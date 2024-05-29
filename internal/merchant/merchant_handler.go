@@ -24,11 +24,12 @@ func NewMerchantHandler(uc IMerchantUsecase) *merchantHandler {
 
 func (h *merchantHandler) Router(r *gin.RouterGroup) {
 	// Grouping to give URL prefix
-	group := r.Group("admin/merchants")
+	group := r.Group("admin/merchants", middleware.UseJwtAuth)
 
-	group.POST("", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)), h.CreateMerchant)
-	group.POST("/:merchantId/items", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)), h.CreateItem)
-	group.GET("", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)), h.FindAllMerchants)
+	group.POST("", middleware.HasRoles(string(user.ADMIN)), h.CreateMerchant)
+	group.GET("/:merchantId/items", middleware.HasRoles(string(user.ADMIN)))
+	group.POST("/:merchantId/items", middleware.HasRoles(string(user.ADMIN)), h.CreateItem)
+	group.GET("", middleware.HasRoles(string(user.ADMIN)), h.FindAllMerchants)
 }
 
 func (h *merchantHandler) CreateMerchant(ctx *gin.Context) {
@@ -85,4 +86,26 @@ func (h *merchantHandler) FindAllMerchants(c *gin.Context) {
 	}
 
 	response.GenerateResponse(c, http.StatusOK, response.WithMessage("Product fetched successfully!"), response.WithData(merchants))
+}
+
+func (h *merchantHandler) FindItemByMerchant(c *gin.Context) {
+	var query GetItemQueryParam
+
+	merchantId := c.Param("merchantId")
+
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.GenerateResponse(c, http.StatusBadRequest, response.WithMessage(err.Error()))
+		c.Abort()
+		return
+	}
+
+	items, err := h.uc.FindAllItem(query, merchantId)
+	if err != nil {
+		response.GenerateResponse(c, err.Code, response.WithMessage(err.Message))
+		c.Abort()
+		return
+	}
+
+	response.GenerateResponse(c, http.StatusOK, response.WithData(items))
+
 }

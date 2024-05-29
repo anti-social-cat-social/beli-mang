@@ -13,6 +13,8 @@ type IMerchantUsecase interface {
 	CreateMerchant(req CreateMerchantDTO) (*CreateMerchantResponse, *localError.GlobalError)
 	CreateItem(merchantId string, req CreateItemDTO) (*CreateItemResponse, *localError.GlobalError)
 	FindAllMerchants(query GetMerchantQueryParams) ([]GetMerchantResponse, *localError.GlobalError)
+	FindMerchantById(id string) (*Merchant, *localError.GlobalError)
+	FindAllItem(query GetItemQueryParam, merchatId string) ([]ItemResponse, *localError.GlobalError)
 }
 
 type merchantUsecase struct {
@@ -27,12 +29,12 @@ func NewMerchantUsecase(repo IMerchantRepository) IMerchantUsecase {
 
 func (uc *merchantUsecase) CreateMerchant(req CreateMerchantDTO) (*CreateMerchantResponse, *localError.GlobalError) {
 	merchant := Merchant{
-		ID: uuid.NewString(),
-		Name: req.Name,
+		ID:               uuid.NewString(),
+		Name:             req.Name,
 		MerchantCategory: req.MerchantCategory,
-		ImageUrl: req.ImageUrl,
-		LocationLat: req.Location.Lat,
-		LocationLong: req.Location.Long,
+		ImageUrl:         req.ImageUrl,
+		LocationLat:      req.Location.Lat,
+		LocationLong:     req.Location.Long,
 	}
 
 	err := uc.repo.CreateMerchant(merchant)
@@ -52,14 +54,14 @@ func (uc *merchantUsecase) CreateItem(merchantId string, req CreateItemDTO) (*Cr
 	if err != nil {
 		return nil, localError.ErrNotFound("merchant not found", err.Error)
 	}
-	
+
 	item := Item{
-		ID: uuid.NewString(),
-		MerchantID: merchantId,
-		Name: req.Name,
+		ID:              uuid.NewString(),
+		MerchantID:      merchantId,
+		Name:            req.Name,
 		ProductCategory: req.ProductCategory,
-		Price: req.Price,
-		ImageUrl: req.ImageUrl,
+		Price:           req.Price,
+		ImageUrl:        req.ImageUrl,
 	}
 
 	err = uc.repo.CreateItem(item)
@@ -85,3 +87,24 @@ func (uc *merchantUsecase) FindAllMerchants(query GetMerchantQueryParams) ([]Get
 	return resp, nil
 }
 
+func (uc *merchantUsecase) FindMerchantById(id string) (*Merchant, *localError.GlobalError) {
+	return uc.repo.FindMerchantById(id)
+}
+
+func (uc *merchantUsecase) FindAllItem(query GetItemQueryParam, merchantId string) ([]ItemResponse, *localError.GlobalError) {
+	// Check if the merchant is exists
+	merchant, err := uc.repo.FindMerchantById(merchantId)
+	if merchant == nil {
+		return nil, err
+	}
+
+	items, err := uc.repo.FindAllItem(query, merchantId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := FormatItemResponse(items)
+
+	return response, nil
+}
