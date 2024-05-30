@@ -19,6 +19,8 @@ type IMerchantRepository interface {
 	CreateMerchant(entity Merchant) *localError.GlobalError
 	FindAllItem(params GetItemQueryParam, merchantId string) ([]Item, *localError.GlobalError)
 	CreateItem(entity Item) *localError.GlobalError
+	CheckMerchantIDs(IDs []string) ([]Merchant, *localError.GlobalError)
+	CheckItemIDs(IDs []string) ([]Item, *localError.GlobalError)
 }
 
 type merchantRepository struct {
@@ -202,3 +204,80 @@ func (r *merchantRepository) FindAllMerchants(params GetMerchantQueryParams) ([]
 
 	return merchants, nil
 }
+
+// Count and check if any merchant id provided in parameter is exists.
+// It will return error if the merchant ID amount given in parameter is not same with the database count
+func (u *merchantRepository) CheckMerchantIDs(IDs []string) ([]Merchant, *localError.GlobalError) {
+	// Construct the query
+	q := `
+		SELECT *
+		FROM merchants
+		WHERE id in (?)
+	`
+
+	// Fill the quety with the place holder
+	// q = fmt.Sprintf(q, generatePlaceholder(len(IDs)))
+
+	// Create variable to store data
+	var merchants []Merchant
+
+	// Generate Query
+	query, args, err := sqlx.In(q, IDs)
+	if err != nil {
+		return nil, localError.ErrInternalServer(err.Error(), err)
+	}
+
+	query = u.db.Rebind(query)
+
+	err = u.db.Select(&merchants, query, args...)
+	if err != nil {
+		return nil, localError.ErrInternalServer(err.Error(), err)
+	}
+
+	return merchants, nil
+}
+
+func (u *merchantRepository) CheckItemIDs(IDs []string) ([]Item, *localError.GlobalError) {
+	// Construct the query
+	q := `
+		SELECT *
+		FROM items
+		WHERE id in (?)
+	`
+
+	// Fill the quety with the place holder
+	// q = fmt.Sprintf(q, generatePlaceholder(len(IDs)))
+
+	// Create variable to store data
+	var items []Item
+
+	// Generate Query
+	query, args, err := sqlx.In(q, IDs)
+	if err != nil {
+		return nil, localError.ErrInternalServer(err.Error(), err)
+	}
+
+	query = u.db.Rebind(query)
+
+	err = u.db.Select(&items, query, args...)
+	if err != nil {
+		return nil, localError.ErrInternalServer(err.Error(), err)
+	}
+
+	return items, nil
+}
+
+// func generatePlaceholder(length int) string {
+// 	var (
+// 		placeholderTmpl []string
+// 		placeholder     string
+// 	)
+
+// 	for i := 0; i < length; i++ {
+// 		placeholderTmpl = append(placeholderTmpl, fmt.Sprintf("$%d", i+1))
+// 	}
+
+// 	placeholder = strings.Join(placeholderTmpl, ",")
+
+// 	return placeholder
+// }

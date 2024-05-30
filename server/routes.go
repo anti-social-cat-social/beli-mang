@@ -49,7 +49,8 @@ func initializeOrderHandler(db *sqlx.DB, router *gin.RouterGroup) {
 	merchantRepo := merchant.NewMerchantRepository(db)
 	merchantUc := merchant.NewMerchantUsecase(merchantRepo)
 
-	orderUc := purchase.NewOrderUsecase(merchantUc)
+	orderRepo := purchase.NewOrderRepository(db)
+	orderUc := purchase.NewOrderUsecase(orderRepo, merchantUc)
 	orderH := purchase.NewOrderHandler(orderUc)
 
 	orderH.Router(router)

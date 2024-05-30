@@ -10,23 +10,32 @@ import (
 )
 
 type orderUsecase struct {
+	repo       IOrderRepository
 	merchantUc merchant.IMerchantUsecase
 }
 
 type IOrderUsecase interface {
-	Estimate(dto Request) (float64, *localError.GlobalError)
+	Estimate(dto Request) (*OrderEstimationResponse, *localError.GlobalError)
+	PlaceOrder(entity ActualOrder) (*ActualOrder, *localError.GlobalError)
 }
 
-func NewOrderUsecase(mUc merchant.IMerchantUsecase) IOrderUsecase {
+func NewOrderUsecase(repo IOrderRepository, mUc merchant.IMerchantUsecase) IOrderUsecase {
 	return &orderUsecase{
+		repo:       repo,
 		merchantUc: mUc,
 	}
 }
 
-func (uc *orderUsecase) Estimate(dto Request) (float64, *localError.GlobalError) {
+func (uc *orderUsecase) Estimate(dto Request) (*OrderEstimationResponse, *localError.GlobalError) {
 	// Create maps of points
 	// This maps is used to calculate area and distance
-	var points []distances.Point
+	var (
+		points              []distances.Point
+		merchantIDs         []string
+		itemIDs             []string
+		estimationMerchants []OrderEstimationDetail
+		totalPrice          int
+	)
 
 	userPoint := distances.Point{
 		Name: "user",
@@ -37,13 +46,46 @@ func (uc *orderUsecase) Estimate(dto Request) (float64, *localError.GlobalError)
 
 	// Generate slice of merchant point
 	// Find merchant should use where In
+	// This block is also create quantity map
+	quantities := make(map[string]int)
 	for _, v := range dto.Orders {
-		var merchantPoint distances.Point
+		// Append ID Merchant to get checked later
+		merchantIDs = append(merchantIDs, v.MerchantID)
 
-		merchant, mercError := uc.merchantUc.FindMerchantById(v.MerchantID)
-		if mercError != nil {
-			return 0.0, mercError
+		// Loop to get Item IDs
+		for _, item := range v.Items {
+			itemIDs = append(itemIDs, item.ItemID)
+
+			// Add quantities by item ID
+			quantities[item.ItemID] = item.Quantity
+
+			// Append order estimation merchants
+			estimationMerchants = append(estimationMerchants, OrderEstimationDetail{
+				ItemID:   item.ItemID,
+				Quantity: item.Quantity,
+			})
 		}
+	}
+
+	// Get and check the ID of merchant and item
+	merchants, err := uc.merchantUc.CheckMerchantIDs(merchantIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	items, err := uc.merchantUc.CheckItemIDs(itemIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check the count
+	if (len(merchants) != len(merchantIDs)) || (len(items) != len(itemIDs)) {
+		return nil, localError.ErrNotFound("ID Merchant / Item not valid", fmt.Errorf("merchant or item is invalid"))
+	}
+
+	// Loop merchant
+	for _, merchant := range merchants {
+		var merchantPoint distances.Point
 
 		merchantPoint.Lat = float64(merchant.LocationLat)
 		merchantPoint.Long = float64(merchant.LocationLong)
@@ -52,11 +94,16 @@ func (uc *orderUsecase) Estimate(dto Request) (float64, *localError.GlobalError)
 		points = append(points, merchantPoint)
 	}
 
+	// Loop item to get total price
+	for _, item := range items {
+		totalPrice += quantities[item.ID] * item.Price
+	}
+
 	// Throw error if the area more than 3km^2
 	area := distances.CalculateArea(points)
 
 	if area > 3*math.Pow10(6) {
-		return 0.0, localError.ErrBadRequest("Area too far", fmt.Errorf("area too far"))
+		return nil, localError.ErrBadRequest("Area too far", fmt.Errorf("area too far"))
 	}
 
 	// Permutate shortest distance
@@ -65,7 +112,6 @@ func (uc *orderUsecase) Estimate(dto Request) (float64, *localError.GlobalError)
 
 	// Calculate fastest / shortest delivery time
 	var time float64
-	velocity := 40.0 // in kph
 
 	for i := 0; i <= len(points)-2; i++ {
 		p1 := distances.Point{
@@ -83,8 +129,48 @@ func (uc *orderUsecase) Estimate(dto Request) (float64, *localError.GlobalError)
 			End:   p2,
 		})
 
-		time += twoPointDistance / velocity
+		time += twoPointDistance / float64(DeliveryVelocity)
 	}
 
-	return time * 60, nil
+	absTime := int(math.Round(time * 60))
+
+	// Store user estimation
+	var estimation OrderEstimation = OrderEstimation{
+		UserID:        dto.UserId,
+		UserLat:       userPoint.Lat,
+		UserLong:      userPoint.Long,
+		Price:         totalPrice,
+		EstimatedTime: absTime,
+	}
+
+	estimationID, err := uc.repo.CreateEstimation(&estimation)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store order estimation merchants
+	err = uc.repo.CreateOrderMerchant(estimationID, estimationMerchants)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate response
+	response := OrderEstimationResponse{
+		TotalPrice:                     totalPrice,
+		EstimatedDeliveryTimeInMinutes: absTime,
+		CalculatedEstimateID:           estimationID,
+	}
+
+	return &response, nil
+}
+
+func (uc *orderUsecase) PlaceOrder(entity ActualOrder) (*ActualOrder, *localError.GlobalError) {
+	result, err := uc.repo.PlaceOrder(entity.OrderEstimationId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ActualOrder{
+		OrderId: result,
+	}, nil
 }

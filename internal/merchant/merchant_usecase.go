@@ -15,6 +15,8 @@ type IMerchantUsecase interface {
 	FindAllMerchants(query GetMerchantQueryParams) ([]GetMerchantResponse, *localError.GlobalError)
 	FindMerchantById(id string) (*Merchant, *localError.GlobalError)
 	FindAllItem(query GetItemQueryParam, merchatId string) ([]ItemResponse, *localError.GlobalError)
+	CheckMerchantIDs(IDs []string) ([]Merchant, *localError.GlobalError)
+	CheckItemIDs(IDs []string) ([]Item, *localError.GlobalError)
 }
 
 type merchantUsecase struct {
@@ -107,4 +109,12 @@ func (uc *merchantUsecase) FindAllItem(query GetItemQueryParam, merchantId strin
 	response := FormatItemResponse(items)
 
 	return response, nil
+}
+
+func (uc *merchantUsecase) CheckMerchantIDs(IDs []string) ([]Merchant, *localError.GlobalError) {
+	return uc.repo.CheckMerchantIDs(IDs)
+}
+
+func (uc *merchantUsecase) CheckItemIDs(IDs []string) ([]Item, *localError.GlobalError) {
+	return uc.repo.CheckItemIDs(IDs)
 }
