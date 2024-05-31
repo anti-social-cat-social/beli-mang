@@ -27,14 +27,15 @@ func NewMerchantHandler(uc IMerchantUsecase) *merchantHandler {
 
 func (h *merchantHandler) Router(r *gin.RouterGroup) {
 	// Grouping to give URL prefix
-	adminGroup := r.Group("admin/merchants")
-	userGroup := r.Group("")
+	adminGroup := r.Group("admin/merchants",middleware.UseJwtAuth,middleware.HasRoles(string(user.ADMIN)))
+	userGroup := r.Group("",middleware.UseJwtAuth, middleware.HasRoles(string(user.USER)))
 
-	adminGroup.POST("", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)), h.CreateMerchant)
-	adminGroup.POST("/:merchantId/items", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)), h.CreateItem)
-	adminGroup.GET("", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)), h.FindAllMerchants)
+	adminGroup.POST("", h.CreateMerchant)
+	adminGroup.POST("/:merchantId/items", h.CreateItem)
+  group.POST("/:merchantId/items", h.CreateItem)
+	adminGroup.GET("", h.FindAllMerchants)
 
-	userGroup.GET("/merchants/nearby/:latlong", middleware.UseJwtAuth, middleware.HasRoles(string(user.USER)), h.GetLatLong, h.FindNearbyMerchants)
+	userGroup.GET("/merchants/nearby/:latlong", h.GetLatLong, h.FindNearbyMerchants)
 }
 
 func (h *merchantHandler) CreateMerchant(ctx *gin.Context) {
@@ -91,6 +92,27 @@ func (h *merchantHandler) FindAllMerchants(c *gin.Context) {
 	}
 
 	response.GenerateResponse(c, http.StatusOK, response.WithMessage("Product fetched successfully!"), response.WithData(merchants))
+}
+
+func (h *merchantHandler) FindItemByMerchant(c *gin.Context) {
+	var query GetItemQueryParam
+
+	merchantId := c.Param("merchantId")
+
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.GenerateResponse(c, http.StatusBadRequest, response.WithMessage(err.Error()))
+		c.Abort()
+		return
+	}
+
+	items, err := h.uc.FindAllItem(query, merchantId)
+	if err != nil {
+		response.GenerateResponse(c, err.Code, response.WithMessage(err.Message))
+		c.Abort()
+		return
+	}
+
+	response.GenerateResponse(c, http.StatusOK, response.WithData(items))
 }
 
 func (h *merchantHandler) GetLatLong(ctx *gin.Context) {

@@ -2,6 +2,7 @@ package helper
 
 import (
 	"errors"
+	"math"
 	"reflect"
 	"strconv"
 )
@@ -32,4 +33,8 @@ func NumberInRange[V string | int](num V, low int, high int) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func ToRad(v float64) float64 {
+	return v * math.Pi / 180
 }
