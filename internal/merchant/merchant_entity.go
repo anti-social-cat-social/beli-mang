@@ -21,14 +21,14 @@ type Merchant struct {
 	Name             string             `json:"name" db:"name"`
 	MerchantCategory MerchantCategories `json:"merchantCategory" db:"merchant_category"`
 	ImageUrl         string             `json:"imageUrl" db:"image_url"`
-	LocationLat      float32            `json:"locationLat" db:"location_lat"`
-	LocationLong     float32            `json:"locationLong" db:"location_long"`
+	LocationLat      float64            `json:"locationLat" db:"location_lat"`
+	LocationLong     float64            `json:"locationLong" db:"location_long"`
 	CreatedAt        time.Time          `json:"createdAt" db:"created_at"`
 }
 
 type Location struct {
-	Lat  float32 `json:"lat" binding:"required"`
-	Long float32 `json:"long" binding:"required"`
+	Lat  float64 `json:"lat" binding:"required"`
+	Long float64 `json:"long" binding:"required"`
 }
 
 type CreateMerchantDTO struct {
@@ -140,8 +140,8 @@ type MerchantWithItemQueryResult struct {
 	MerchantName      string             `json:"merchantName" db:"merchant_name"`
 	MerchantCategory  MerchantCategories `json:"merchantCategory" db:"merchant_category"`
 	MerchantImageUrl  string             `json:"merchantImageUrl" db:"merchant_image_url"`
-	LocationLat       float32            `json:"locationLat" db:"location_lat"`
-	LocationLong      float32            `json:"locationLong" db:"location_long"`
+	LocationLat       float64            `json:"locationLat" db:"location_lat"`
+	LocationLong      float64            `json:"locationLong" db:"location_long"`
 	MerchantCreatedAt time.Time          `json:"merchantCreatedAt" db:"merchant_created_at"`
 	ItemId            string             `json:"itemId" db:"item_id"`
 	ItemName          string             `json:"itemName" db:"item_name"`
@@ -149,7 +149,7 @@ type MerchantWithItemQueryResult struct {
 	Price             int                `json:"price" db:"price"`
 	ItemImageUrl      string             `json:"itemImageUrl" db:"item_image_url"`
 	ItemCreatedAt     time.Time          `json:"itemCreatedAt" db:"item_created_at"`
-	Distance          float32            `json:"distance" db:"distance"`
+	Distance          float64            `json:"distance" db:"distance"`
 }
 
 type NearbyMerchantWithItemResponse struct {
