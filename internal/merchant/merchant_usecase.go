@@ -17,6 +17,7 @@ type IMerchantUsecase interface {
 	FindAllItem(query GetItemQueryParam, merchatId string) ([]ItemResponse, *localError.GlobalError)
 	CheckMerchantIDs(IDs []string) ([]Merchant, *localError.GlobalError)
 	CheckItemIDs(IDs []string) ([]Item, *localError.GlobalError)
+	FindNearbyMerchants(location Location, query GetMerchantQueryParams) ([]NearbyMerchantWithItemResponse, *localError.GlobalError)
 }
 
 type merchantUsecase struct {
@@ -109,6 +110,37 @@ func (uc *merchantUsecase) FindAllItem(query GetItemQueryParam, merchantId strin
 	response := FormatItemResponse(items)
 
 	return response, nil
+}
+
+func (uc *merchantUsecase) FindNearbyMerchants(location Location, query GetMerchantQueryParams) ([]NearbyMerchantWithItemResponse, *localError.GlobalError) {
+	merchants, err := uc.repo.FindNearbyMerchants(location, query)
+  if err != nil {
+		return nil, err
+	}
+  
+  resp := FormatNearbyMerchantWithItemResponse(merchants)
+
+	limit := 5
+	offset := 0
+	if query.Limit != 0 {
+		limit = query.Limit
+	}
+	if query.Offset != 0 {
+		offset = query.Offset
+	}
+
+	if offset >= len(resp) {
+		return []NearbyMerchantWithItemResponse{}, nil
+	}
+	if limit < 0 {
+		return []NearbyMerchantWithItemResponse{}, nil
+	}
+	if offset+limit > len(resp) {
+		cut := offset+limit-len(resp)
+		limit = limit-cut
+	}
+	
+	return resp[offset:offset+limit], nil
 }
 
 func (uc *merchantUsecase) CheckMerchantIDs(IDs []string) ([]Merchant, *localError.GlobalError) {

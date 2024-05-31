@@ -9,6 +9,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	// "github.com/go-playground/validator/v10"
+	"log"
+	"strings"
+	"strconv"
 )
 
 type merchantHandler struct {
@@ -24,12 +27,15 @@ func NewMerchantHandler(uc IMerchantUsecase) *merchantHandler {
 
 func (h *merchantHandler) Router(r *gin.RouterGroup) {
 	// Grouping to give URL prefix
-	group := r.Group("admin/merchants", middleware.UseJwtAuth)
+	adminGroup := r.Group("admin/merchants",middleware.UseJwtAuth,middleware.HasRoles(string(user.ADMIN)))
+	userGroup := r.Group("",middleware.UseJwtAuth, middleware.HasRoles(string(user.USER)))
 
-	group.POST("", middleware.HasRoles(string(user.ADMIN)), h.CreateMerchant)
-	group.GET("/:merchantId/items", middleware.HasRoles(string(user.ADMIN)))
-	group.POST("/:merchantId/items", middleware.HasRoles(string(user.ADMIN)), h.CreateItem)
-	group.GET("", middleware.HasRoles(string(user.ADMIN)), h.FindAllMerchants)
+	adminGroup.POST("", h.CreateMerchant)
+	adminGroup.POST("/:merchantId/items", h.CreateItem)
+  group.POST("/:merchantId/items", h.CreateItem)
+	adminGroup.GET("", h.FindAllMerchants)
+
+	userGroup.GET("/merchants/nearby/:latlong", h.GetLatLong, h.FindNearbyMerchants)
 }
 
 func (h *merchantHandler) CreateMerchant(ctx *gin.Context) {
@@ -107,5 +113,68 @@ func (h *merchantHandler) FindItemByMerchant(c *gin.Context) {
 	}
 
 	response.GenerateResponse(c, http.StatusOK, response.WithData(items))
+}
 
+func (h *merchantHandler) GetLatLong(ctx *gin.Context) {
+	latlong := ctx.Param("latlong")
+	latlongArr := strings.Split(latlong, ",")
+
+	if len(latlongArr) != 2 {
+		response.GenerateResponse(ctx, 400, response.WithMessage("lat / long is not valid"))
+		ctx.Abort()
+		return
+	}
+
+	lat, err := strconv.ParseFloat(latlongArr[0], 32)
+	if err != nil {
+		response.GenerateResponse(ctx, 400, response.WithMessage("lat / long is not valid"))
+		ctx.Abort()
+		return
+	}
+
+	long, err := strconv.ParseFloat(latlongArr[1], 32)
+	if err != nil {
+		response.GenerateResponse(ctx, 400, response.WithMessage("lat / long is not valid"))
+		ctx.Abort()
+		return
+	}
+
+	ctx.Set("location", Location{
+		Lat: float32(lat),
+		Long: float32(long),
+	})
+
+	ctx.Next()
+}
+
+func (h *merchantHandler) FindNearbyMerchants(c *gin.Context) {
+	query := GetMerchantQueryParams{}	
+
+	if err := c.ShouldBindQuery(&query); err != nil {
+		res := validation.FormatValidation(err)
+		response.GenerateResponse(c, res.Code, response.WithMessage(res.Message))
+		return
+	}
+
+	var location Location
+	locationI, _ := c.Get("location")
+	location = locationI.(Location)
+	// log.Println(location)
+
+	// merchants := Merchant{}
+	// merchants, err := h.uc.FindAllMerchants(query)
+	// if err != nil {
+	// 	response.GenerateResponse(c, err.Code, response.WithMessage(err.Message))
+	// 	return
+	// }
+
+	merchants, err := h.uc.FindNearbyMerchants(location, query)
+	if err != nil {
+		response.GenerateResponse(c, err.Code, response.WithMessage(err.Message))
+		return
+	}
+
+	log.Println(merchants)
+
+	response.GenerateResponse(c, http.StatusOK, response.WithMessage("Product fetched successfully!"), response.WithData(merchants))
 }
