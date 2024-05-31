@@ -17,6 +17,7 @@ type IMerchantRepository interface {
 	FindMerchantById(merchantId string) (*Merchant, *localError.GlobalError)
 	CreateItem(entity Item) *localError.GlobalError
 	FindAllMerchants(params GetMerchantQueryParams) ([]Merchant, *localError.GlobalError)
+	FindNearbyMerchants(location Location, params GetMerchantQueryParams) ([]MerchantWithItemQueryResult, *localError.GlobalError)
 }
 
 type merchantRepository struct {
@@ -127,6 +128,71 @@ func (r *merchantRepository) FindAllMerchants(params GetMerchantQueryParams) ([]
 	if err != nil {
 		log.Println(err)
 		return merchants, nil//localError.ErrInternalServer("Failed to find merchants", err)
+	}
+
+	return merchants, nil
+}
+
+func (r *merchantRepository) FindNearbyMerchants(location Location, params GetMerchantQueryParams) ([]MerchantWithItemQueryResult, *localError.GlobalError) {
+	merchants := []MerchantWithItemQueryResult{}
+
+	subquery := `
+	select
+	m.id as merchant_id,
+	m.name as merchant_name,
+	merchant_category,
+	m.image_url as merchant_image_url,
+	location_lat,
+	location_long,
+	m.created_at as merchant_created_at,
+	i.id as item_id,
+	i.name as item_name,
+	product_category,
+	price,
+	i.image_url as item_image_url,
+	i.created_at as item_created_at 
+	from merchants m inner join items i on m.id = i.merchant_id` 
+	nwhere := 0
+
+	if params.MerchantID != "" {
+		nwhere += 1
+		subquery += fmt.Sprintf(" WHERE m.id = '%s'", params.MerchantID)
+	}
+
+	if params.Name != "" {
+		prefix := "WHERE"
+		if nwhere > 0 {
+			prefix = "AND"
+		}
+		nwhere += 1
+		subquery += fmt.Sprintf(" %s (m.name ILIKE '%%%s%%' OR i.name ILIKE '%%%s%%')", prefix, params.Name, params.Name)
+	}
+
+	if params.MerchantCategory == "SmallRestaurant" || params.MerchantCategory == "MediumRestaurant" || params.MerchantCategory == "LargeRestaurant" || params.MerchantCategory == "MerchandiseRestaurant" || params.MerchantCategory == "BoothKiosk" || params.MerchantCategory == "ConvenienceStore" {
+		prefix := "WHERE"
+		if nwhere > 0 {
+			prefix = "AND"
+		}
+		nwhere += 1
+		subquery += fmt.Sprintf(" %s merchant_category = '%s'", prefix, params.MerchantCategory)
+	}
+
+	query := fmt.Sprintf(`
+	WITH myconstant (rad) as (
+		values (pi()/180)
+	 ),
+	 mydata as (%s)
+	 select
+	 2 * 6371 * asin( |/( sin((%f*rad-location_lat*rad)/2::decimal)^2 + (sin((%f*rad-location_long*rad)/2::decimal)^2) * cos(location_lat*rad) * cos(%f*rad) ) ) as distance,
+	 mydata.* from mydata, myconstant
+	 order by distance asc;`, subquery, location.Lat, location.Long, location.Lat)
+
+	// log.Println(query)
+
+	err := r.db.Select(&merchants, query)
+	if err != nil {
+		log.Println(err)
+		return merchants, nil
 	}
 
 	return merchants, nil

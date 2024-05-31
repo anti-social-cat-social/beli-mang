@@ -13,6 +13,7 @@ type IMerchantUsecase interface {
 	CreateMerchant(req CreateMerchantDTO) (*CreateMerchantResponse, *localError.GlobalError)
 	CreateItem(merchantId string, req CreateItemDTO) (*CreateItemResponse, *localError.GlobalError)
 	FindAllMerchants(query GetMerchantQueryParams) ([]GetMerchantResponse, *localError.GlobalError)
+	FindNearbyMerchants(location Location, query GetMerchantQueryParams) ([]NearbyMerchantWithItemResponse, *localError.GlobalError)
 }
 
 type merchantUsecase struct {
@@ -85,3 +86,33 @@ func (uc *merchantUsecase) FindAllMerchants(query GetMerchantQueryParams) ([]Get
 	return resp, nil
 }
 
+func (uc *merchantUsecase) FindNearbyMerchants(location Location, query GetMerchantQueryParams) ([]NearbyMerchantWithItemResponse, *localError.GlobalError) {
+	merchants, err := uc.repo.FindNearbyMerchants(location, query)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := FormatNearbyMerchantWithItemResponse(merchants)
+
+	limit := 5
+	offset := 0
+	if query.Limit != 0 {
+		limit = query.Limit
+	}
+	if query.Offset != 0 {
+		offset = query.Offset
+	}
+
+	if offset >= len(resp) {
+		return []NearbyMerchantWithItemResponse{}, nil
+	}
+	if limit < 0 {
+		return []NearbyMerchantWithItemResponse{}, nil
+	}
+	if offset+limit > len(resp) {
+		cut := offset+limit-len(resp)
+		limit = limit-cut
+	}
+	
+	return resp[offset:offset+limit], nil
+}
