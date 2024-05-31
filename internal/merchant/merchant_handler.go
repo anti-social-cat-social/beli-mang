@@ -10,8 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	// "github.com/go-playground/validator/v10"
 	"log"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type merchantHandler struct {
@@ -27,12 +27,11 @@ func NewMerchantHandler(uc IMerchantUsecase) *merchantHandler {
 
 func (h *merchantHandler) Router(r *gin.RouterGroup) {
 	// Grouping to give URL prefix
-	adminGroup := r.Group("admin/merchants",middleware.UseJwtAuth,middleware.HasRoles(string(user.ADMIN)))
-	userGroup := r.Group("",middleware.UseJwtAuth, middleware.HasRoles(string(user.USER)))
+	adminGroup := r.Group("admin/merchants", middleware.UseJwtAuth, middleware.HasRoles(string(user.ADMIN)))
+	userGroup := r.Group("", middleware.UseJwtAuth, middleware.HasRoles(string(user.USER)))
 
 	adminGroup.POST("", h.CreateMerchant)
 	adminGroup.POST("/:merchantId/items", h.CreateItem)
-  group.POST("/:merchantId/items", h.CreateItem)
 	adminGroup.GET("", h.FindAllMerchants)
 
 	userGroup.GET("/merchants/nearby/:latlong", h.GetLatLong, h.FindNearbyMerchants)
@@ -140,7 +139,7 @@ func (h *merchantHandler) GetLatLong(ctx *gin.Context) {
 	}
 
 	ctx.Set("location", Location{
-		Lat: float32(lat),
+		Lat:  float32(lat),
 		Long: float32(long),
 	})
 
@@ -148,7 +147,7 @@ func (h *merchantHandler) GetLatLong(ctx *gin.Context) {
 }
 
 func (h *merchantHandler) FindNearbyMerchants(c *gin.Context) {
-	query := GetMerchantQueryParams{}	
+	query := GetMerchantQueryParams{}
 
 	if err := c.ShouldBindQuery(&query); err != nil {
 		res := validation.FormatValidation(err)
