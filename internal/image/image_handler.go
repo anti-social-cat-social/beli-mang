@@ -5,8 +5,9 @@ import (
 	"belimang/internal/user"
 	"belimang/pkg/response"
 	"log"
-	"github.com/gin-gonic/gin"
 	"sync"
+
+	"github.com/gin-gonic/gin"
 )
 
 var wg sync.WaitGroup
@@ -30,25 +31,25 @@ func (h *imageHandler) Router(r *gin.RouterGroup) {
 
 func (h *imageHandler) Upload(ctx *gin.Context) {
 	wg.Add(1)
-    go func() {
-        defer wg.Done()
+	go func() {
+		defer wg.Done()
 
 		file, _ := ctx.FormFile("file")
 
 		if file == nil {
-			response.GenerateResponse(ctx, 400)
+			response.GenerateResponse(ctx, 400, response.WithMessage("File tidak ada"))
 			ctx.Abort()
 			return
 		}
 
 		if file.Size > 2000000 {
-			response.GenerateResponse(ctx, 400)
+			response.GenerateResponse(ctx, 400, response.WithMessage("File terlalu besar"))
 			ctx.Abort()
 			return
 		}
 
 		if file.Header["Content-Type"][0] != "image/jpeg" {
-			response.GenerateResponse(ctx, 400)
+			response.GenerateResponse(ctx, 400, response.WithMessage("File tidak valid"))
 			ctx.Abort()
 			return
 		}
@@ -57,20 +58,20 @@ func (h *imageHandler) Upload(ctx *gin.Context) {
 		// filename := filepath.Base(file.Filename)
 		// log.Println(filename)
 
-        url, err := UploadFileToS3(file)
-        if err != nil {
-            log.Println("Error uploading file:", err)
-            response.GenerateResponse(ctx, 500)
+		url, err := UploadFileToS3(file)
+		if err != nil {
+			log.Println("Error uploading file:", err)
+			response.GenerateResponse(ctx, 500, response.WithMessage(err.Message), response.WithData(err.Error.Error()))
 			ctx.Abort()
 			return
-        }
+		}
 
 		res := UploadImageResponse{
 			ImageUrl: url,
 		}
 
 		response.GenerateResponse(ctx, 200, response.WithMessage("upload file successfully!"), response.WithData(res))
-    }()
+	}()
 
-    wg.Wait()
+	wg.Wait()
 }
