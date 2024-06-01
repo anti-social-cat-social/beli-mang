@@ -28,6 +28,7 @@ func (h *orderHandler) Router(r *gin.RouterGroup) {
 	// Routing
 	group.POST("estimate", h.Estimate)
 	group.POST("orders", h.Order)
+	group.GET("orders", h.OrderHistory)
 }
 
 func (h *orderHandler) Estimate(c *gin.Context) {
@@ -80,4 +81,26 @@ func (h *orderHandler) Order(c *gin.Context) {
 	}
 
 	response.GenerateResponse(c, 201, response.WithData(result))
+}
+
+func (h *orderHandler) OrderHistory(c *gin.Context) {
+	var req GetOrderHistQueryParams
+
+	userId := c.GetString("userID")
+
+	// Parse request body to struct
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.GenerateResponse(c, http.StatusBadRequest, response.WithMessage(err.Error()))
+		c.Abort()
+		return
+	}
+
+	result, err := h.usecase.OrderHistory(userId, req)
+	if err != nil {
+		response.GenerateResponse(c, err.Code, response.WithMessage(err.Message))
+		c.Abort()
+		return
+	}
+
+	response.GenerateResponse(c, 200, response.WithData(result))
 }

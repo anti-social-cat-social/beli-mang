@@ -139,8 +139,8 @@ func (h *merchantHandler) GetLatLong(ctx *gin.Context) {
 	}
 
 	ctx.Set("location", Location{
-		Lat:  float32(lat),
-		Long: float32(long),
+		Lat:  float64(lat),
+		Long: float64(long),
 	})
 
 	ctx.Next()

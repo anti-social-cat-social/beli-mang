@@ -12,6 +12,7 @@ type IOrderRepository interface {
 	CreateEstimation(entity *OrderEstimation) (string, *localError.GlobalError)
 	CreateOrderMerchant(orderEstimationID string, entity []OrderEstimationDetail) *localError.GlobalError
 	PlaceOrder(orderEstimationID string) (string, *localError.GlobalError)
+	OrderHistory(userId string, params GetOrderHistQueryParams) ([]GetOrderHistQueryResult, *localError.GlobalError)
 }
 
 type orderRepository struct {
@@ -97,6 +98,59 @@ func (repo *orderRepository) CreateEstimation(entity *OrderEstimation) (string, 
 	}
 
 	return id, nil
+}
+
+func (repo *orderRepository) OrderHistory(userId string, params GetOrderHistQueryParams) ([]GetOrderHistQueryResult, *localError.GlobalError) {
+	orders := []GetOrderHistQueryResult{}
+
+	query := fmt.Sprintf(`
+	select 
+	o.id as order_id,
+	m.id as merchant_id ,
+	m.name as merchant_name,
+	m.merchant_category ,
+	m.image_url as merchant_image_url,
+	m.location_lat ,
+	m.location_long ,
+	m.created_at as merchant_created_at,
+	i.id as item_id,
+	i.name as item_name,
+	i.product_category ,
+	i.price ,
+	i.image_url as item_image_url,
+	i.created_at as item_created_at,
+	oei.quantity
+	from orders o inner join order_estimation oe 
+	on o.order_estimation_id = oe.id
+	inner join order_estimation_items oei 
+	on oe.id = oei.order_estimation_id
+	inner join items i 
+	on oei.item_id = i.id
+	inner join merchants m 
+	on i.merchant_id = m.id
+	where oe.user_id = '%s'`, userId)
+
+	if params.MerchantID != "" {
+		query += fmt.Sprintf(" AND m.id = '%s'", params.MerchantID)
+	}
+
+	if params.MerchantCategory == "SmallRestaurant" || params.MerchantCategory == "MediumRestaurant" || params.MerchantCategory == "LargeRestaurant" || params.MerchantCategory == "MerchandiseRestaurant" || params.MerchantCategory == "BoothKiosk" || params.MerchantCategory == "ConvenienceStore" {
+		query += fmt.Sprintf(" AND merchant_category = '%s'", params.MerchantCategory)
+	}
+
+	if params.Name != "" {
+		query += fmt.Sprintf(" AND (m.name ILIKE '%%%s%%' OR i.name ILIKE '%%%s%%')", params.Name, params.Name)
+	}
+
+	// log.Println(query)
+
+	err := repo.db.Select(&orders, query)
+	if err != nil {
+		log.Println(err)
+		return orders, nil
+	}
+
+	return orders, nil
 }
 
 func NewOrderRepository(db *sqlx.DB) IOrderRepository {

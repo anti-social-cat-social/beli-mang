@@ -17,6 +17,7 @@ type orderUsecase struct {
 type IOrderUsecase interface {
 	Estimate(dto Request) (*OrderEstimationResponse, *localError.GlobalError)
 	PlaceOrder(entity ActualOrder) (*ActualOrder, *localError.GlobalError)
+	OrderHistory(userId string, dto GetOrderHistQueryParams) ([]GetOrderHistResponseWithOrderId, *localError.GlobalError)
 }
 
 func NewOrderUsecase(repo IOrderRepository, mUc merchant.IMerchantUsecase) IOrderUsecase {
@@ -173,4 +174,37 @@ func (uc *orderUsecase) PlaceOrder(entity ActualOrder) (*ActualOrder, *localErro
 	return &ActualOrder{
 		OrderId: result,
 	}, nil
+}
+
+func (uc *orderUsecase) OrderHistory(userId string, dto GetOrderHistQueryParams) ([]GetOrderHistResponseWithOrderId, *localError.GlobalError) {
+	orders, err := uc.repo.OrderHistory(userId, dto)
+  	if err != nil {
+		return nil, err
+	}
+  
+	ordersWithOrderId := FormatGetOrderHistResponse(orders)
+
+	resp := FormatGetOrderHistResponseWithOrderId(ordersWithOrderId)
+
+	limit := 5
+	offset := 0
+	if dto.Limit != 0 {
+		limit = dto.Limit
+	}
+	if dto.Offset != 0 {
+		offset = dto.Offset
+	}
+
+	if offset >= len(resp) {
+		return []GetOrderHistResponseWithOrderId{}, nil
+	}
+	if limit < 0 {
+		return []GetOrderHistResponseWithOrderId{}, nil
+	}
+	if offset+limit > len(resp) {
+		cut := offset+limit-len(resp)
+		limit = limit-cut
+	}
+	
+	return resp[offset:offset+limit], nil
 }

@@ -114,11 +114,11 @@ func (uc *merchantUsecase) FindAllItem(query GetItemQueryParam, merchantId strin
 
 func (uc *merchantUsecase) FindNearbyMerchants(location Location, query GetMerchantQueryParams) ([]NearbyMerchantWithItemResponse, *localError.GlobalError) {
 	merchants, err := uc.repo.FindNearbyMerchants(location, query)
-  if err != nil {
+  	if err != nil {
 		return nil, err
 	}
   
-  resp := FormatNearbyMerchantWithItemResponse(merchants)
+  	resp := FormatNearbyMerchantWithItemResponse(merchants)
 
 	limit := 5
 	offset := 0
