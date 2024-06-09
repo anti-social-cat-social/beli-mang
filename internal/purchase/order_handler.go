@@ -4,7 +4,7 @@ import (
 	"belimang/internal/middleware"
 	"belimang/pkg/response"
 	"net/http"
-
+	"strings"
 	"github.com/gin-gonic/gin"
 )
 
@@ -38,6 +38,11 @@ func (h *orderHandler) Estimate(c *gin.Context) {
 
 	// Parse request body to struct
 	if err := c.ShouldBindJSON(&req); err != nil {
+		if strings.Contains(err.Error(), "failed on the 'uuid' tag") {
+			response.GenerateResponse(c, http.StatusNotFound, response.WithMessage(err.Error()))
+		} else {
+			response.GenerateResponse(c, http.StatusBadRequest, response.WithMessage(err.Error()))
+		}
 		response.GenerateResponse(c, http.StatusBadRequest, response.WithMessage(err.Error()))
 		c.Abort()
 		return
@@ -60,7 +65,7 @@ func (h *orderHandler) Estimate(c *gin.Context) {
 		return
 	}
 
-	response.GenerateResponse(c, 200, response.WithData(result))
+	response.GenerateResponseReturnData(c, 200, response.WithData(result))
 }
 
 func (h *orderHandler) Order(c *gin.Context) {
@@ -80,7 +85,7 @@ func (h *orderHandler) Order(c *gin.Context) {
 		return
 	}
 
-	response.GenerateResponse(c, 201, response.WithData(result))
+	response.GenerateResponseReturnData(c, 201, response.WithData(result))
 }
 
 func (h *orderHandler) OrderHistory(c *gin.Context) {
@@ -102,5 +107,5 @@ func (h *orderHandler) OrderHistory(c *gin.Context) {
 		return
 	}
 
-	response.GenerateResponse(c, 200, response.WithData(result))
+	response.GenerateResponseReturnData(c, 200, response.WithData(result))
 }

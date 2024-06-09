@@ -31,15 +31,15 @@ type UserLocation struct {
 }
 
 type Item struct {
-	ItemID   string `json:"itemId" binding:"required"`
+	ItemID   string `json:"itemId" binding:"required,uuid"`
 	Quantity int    `json:"quantity" binding:"required"`
 }
 
 // Order estimation
 type Order struct {
-	MerchantID      string `json:"merchantId" binding:"required"`
+	MerchantID      string `json:"merchantId" binding:"required,uuid"`
 	IsStartingPoint bool   `json:"isStartingPoint"`
-	Items           []Item `json:"items" binding:"required"`
+	Items           []Item `json:"items" binding:"required,dive"`
 }
 
 // Order that has been placed / confirmed
@@ -51,7 +51,7 @@ type ActualOrder struct {
 type Request struct {
 	UserId       string
 	UserLocation UserLocation `json:"userLocation" binding:"required"`
-	Orders       []Order      `json:"orders" binding:"required"`
+	Orders       []Order      `json:"orders" binding:"required,dive"`
 }
 
 type OrderEstimationResponse struct {

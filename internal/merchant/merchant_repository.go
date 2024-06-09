@@ -86,7 +86,7 @@ func (r *merchantRepository) FindAllItem(param GetItemQueryParam, merchantId str
 
 	// Filter by Name
 	if param.Name != "" {
-		query += fmt.Sprintf(" name ILIKE '%%%s%%'", param.Name)
+		query += fmt.Sprintf(" AND name ILIKE '%%%s%%'", param.Name)
 	}
 
 	// Filter by Category
@@ -182,6 +182,8 @@ func (r *merchantRepository) FindAllMerchants(params GetMerchantQueryParams) ([]
 
 	if params.CreatedAt == "asc" || params.CreatedAt == "desc" {
 		query += fmt.Sprintf(" ORDER BY created_at %s", params.CreatedAt)
+	} else {
+		query += " ORDER BY created_at desc"
 	}
 
 	if params.Limit != 0 {

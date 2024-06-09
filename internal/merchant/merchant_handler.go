@@ -147,14 +147,14 @@ func (h *merchantHandler) GetLatLong(ctx *gin.Context) {
 		return
 	}
 
-	lat, err := strconv.ParseFloat(latlongArr[0], 32)
+	lat, err := strconv.ParseFloat(latlongArr[0], 64)
 	if err != nil {
 		response.GenerateResponse(ctx, 400, response.WithMessage("lat / long is not valid"))
 		ctx.Abort()
 		return
 	}
 
-	long, err := strconv.ParseFloat(latlongArr[1], 32)
+	long, err := strconv.ParseFloat(latlongArr[1], 64)
 	if err != nil {
 		response.GenerateResponse(ctx, 400, response.WithMessage("lat / long is not valid"))
 		ctx.Abort()

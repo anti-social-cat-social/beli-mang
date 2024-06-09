@@ -34,7 +34,7 @@ type Location struct {
 type CreateMerchantDTO struct {
 	Name             string             `json:"name" binding:"required,min=2,max=30"`
 	MerchantCategory MerchantCategories `json:"merchantCategory" binding:"required,oneof=SmallRestaurant MediumRestaurant LargeRestaurant MerchandiseRestaurant BoothKiosk ConvenienceStore"`
-	ImageUrl         string             `json:"imageUrl" binding:"required,url"`
+	ImageUrl         string             `json:"imageUrl" binding:"required,url,contains=."`
 	Location         Location           `json:"location" binding:"required"`
 }
 
@@ -64,9 +64,9 @@ type Item struct {
 
 type CreateItemDTO struct {
 	Name            string            `json:"name" binding:"required,min=2,max=30"`
-	ProductCategory ProductCategories `json:"productCategory" binding:"required"`
+	ProductCategory ProductCategories `json:"productCategory" binding:"required,oneof=Beverage Food Snack Condiments Additions"`
 	Price           int               `json:"price" binding:"required,min=1"`
-	ImageUrl        string            `json:"imageUrl" binding:"required,url"`
+	ImageUrl        string            `json:"imageUrl" binding:"required,url,contains=."`
 }
 
 type GetItemQueryParam struct {
@@ -79,7 +79,7 @@ type GetItemQueryParam struct {
 }
 
 type ItemResponse struct {
-	ID              string            `json:"id"`
+	ID              string            `json:"itemId"`
 	Name            string            `json:"name"`
 	ProductCategory ProductCategories `json:"productCategory"`
 	Price           int               `json:"price"`
