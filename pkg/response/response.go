@@ -55,3 +55,20 @@ func GenerateResponse(ctx *gin.Context, code int, options ...responseOpts) {
 		response,
 	)
 }
+
+func GenerateResponseReturnData(ctx *gin.Context, code int, options ...responseOpts) {
+	response := response{
+		Code:    code,
+		Data:    nil,
+		Message: http.StatusText(code),
+	}
+
+	for _, opts := range options {
+		opts(&response)
+	}
+
+	ctx.JSON(
+		code,
+		response.Data,
+	)
+}

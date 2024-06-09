@@ -33,7 +33,7 @@ type Location struct {
 
 type CreateMerchantDTO struct {
 	Name             string             `json:"name" binding:"required,min=2,max=30"`
-	MerchantCategory MerchantCategories `json:"merchantCategory" binding:"required"`
+	MerchantCategory MerchantCategories `json:"merchantCategory" binding:"required,oneof=SmallRestaurant MediumRestaurant LargeRestaurant MerchandiseRestaurant BoothKiosk ConvenienceStore"`
 	ImageUrl         string             `json:"imageUrl" binding:"required,url"`
 	Location         Location           `json:"location" binding:"required"`
 }

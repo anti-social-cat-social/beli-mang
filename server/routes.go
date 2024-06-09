@@ -15,7 +15,7 @@ import (
 func NewRoute(engine *gin.Engine, db *sqlx.DB) {
 	// Handle for not found routes
 	engine.NoRoute(NoRouteHandler)
-	router := engine.Group("v1")
+	router := engine.Group("")
 
 	router.GET("ping", pingHandler)
 

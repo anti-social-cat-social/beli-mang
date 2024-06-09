@@ -12,12 +12,12 @@ import (
 type IMerchantUsecase interface {
 	CreateMerchant(req CreateMerchantDTO) (*CreateMerchantResponse, *localError.GlobalError)
 	CreateItem(merchantId string, req CreateItemDTO) (*CreateItemResponse, *localError.GlobalError)
-	FindAllMerchants(query GetMerchantQueryParams) ([]GetMerchantResponse, *localError.GlobalError)
+	FindAllMerchants(query GetMerchantQueryParams) (GetMerchantResponseAndMeta, *localError.GlobalError)
 	FindMerchantById(id string) (*Merchant, *localError.GlobalError)
-	FindAllItem(query GetItemQueryParam, merchatId string) ([]ItemResponse, *localError.GlobalError)
+	FindAllItem(query GetItemQueryParam, merchatId string) (ItemResponseAndMeta, *localError.GlobalError)
 	CheckMerchantIDs(IDs []string) ([]Merchant, *localError.GlobalError)
 	CheckItemIDs(IDs []string) ([]Item, *localError.GlobalError)
-	FindNearbyMerchants(location Location, query GetMerchantQueryParams) ([]NearbyMerchantWithItemResponse, *localError.GlobalError)
+	FindNearbyMerchants(location Location, query GetMerchantQueryParams) (NearbyMerchantWithItemResponseAndMeta, *localError.GlobalError)
 }
 
 type merchantUsecase struct {
@@ -79,43 +79,100 @@ func (uc *merchantUsecase) CreateItem(merchantId string, req CreateItemDTO) (*Cr
 	return &response, nil
 }
 
-func (uc *merchantUsecase) FindAllMerchants(query GetMerchantQueryParams) ([]GetMerchantResponse, *localError.GlobalError) {
+type Meta struct {
+	Limit int `json:"limit"`
+	Offset int `json:"offset"`
+	Total int `json:"total"`
+}
+
+type NearbyMerchantWithItemResponseAndMeta struct {
+	Data []NearbyMerchantWithItemResponse `json:"data"`
+	Meta Meta `json:"meta"`
+}
+
+type GetMerchantResponseAndMeta struct {
+	Data []GetMerchantResponse `json:"data"`
+	Meta Meta `json:"meta"`
+}
+
+type ItemResponseAndMeta struct {
+	Data []ItemResponse `json:"data"`
+	Meta Meta `json:"meta"`
+}
+
+func (uc *merchantUsecase) FindAllMerchants(query GetMerchantQueryParams) (GetMerchantResponseAndMeta, *localError.GlobalError) {
 	merchants, err := uc.repo.FindAllMerchants(query)
 	if err != nil {
-		return nil, err
+		return GetMerchantResponseAndMeta{}, err
 	}
 
 	resp := FormatGetMerchantResponse(merchants)
 
-	return resp, nil
+	limit := 5
+	offset := 0
+	if query.Limit != 0 {
+		limit = query.Limit
+	}
+	if query.Offset != 0 {
+		offset = query.Offset
+	}
+
+	meta := Meta{
+		Limit: limit,
+		Offset: offset,
+		Total: len(resp),
+	}
+	
+	return GetMerchantResponseAndMeta{
+		Data: resp,
+		Meta: meta,
+	}, nil
 }
 
 func (uc *merchantUsecase) FindMerchantById(id string) (*Merchant, *localError.GlobalError) {
 	return uc.repo.FindMerchantById(id)
 }
 
-func (uc *merchantUsecase) FindAllItem(query GetItemQueryParam, merchantId string) ([]ItemResponse, *localError.GlobalError) {
+func (uc *merchantUsecase) FindAllItem(query GetItemQueryParam, merchantId string) (ItemResponseAndMeta, *localError.GlobalError) {
 	// Check if the merchant is exists
 	merchant, err := uc.repo.FindMerchantById(merchantId)
 	if merchant == nil {
-		return nil, err
+		return ItemResponseAndMeta{}, err
 	}
 
 	items, err := uc.repo.FindAllItem(query, merchantId)
 
 	if err != nil {
-		return nil, err
+		return ItemResponseAndMeta{}, err
 	}
 
 	response := FormatItemResponse(items)
 
-	return response, nil
+	limit := 5
+	offset := 0
+	if query.Limit != 0 {
+		limit = query.Limit
+	}
+	if query.Offset != 0 {
+		offset = query.Offset
+	}
+
+	meta := Meta{
+		Limit: limit,
+		Offset: offset,
+		Total: len(response),
+	}
+
+	return ItemResponseAndMeta{
+		Data: response,
+		Meta: meta,
+	}, nil
 }
 
-func (uc *merchantUsecase) FindNearbyMerchants(location Location, query GetMerchantQueryParams) ([]NearbyMerchantWithItemResponse, *localError.GlobalError) {
+func (uc *merchantUsecase) FindNearbyMerchants(location Location, query GetMerchantQueryParams) (NearbyMerchantWithItemResponseAndMeta, *localError.GlobalError) {
 	merchants, err := uc.repo.FindNearbyMerchants(location, query)
   	if err != nil {
-		return nil, err
+		return NearbyMerchantWithItemResponseAndMeta{}, err
 	}
   
   	resp := FormatNearbyMerchantWithItemResponse(merchants)
@@ -130,17 +187,26 @@ func (uc *merchantUsecase) FindNearbyMerchants(location Location, query GetMerch
 	}
 
 	if offset >= len(resp) {
-		return []NearbyMerchantWithItemResponse{}, nil
+		return NearbyMerchantWithItemResponseAndMeta{}, nil
 	}
 	if limit < 0 {
-		return []NearbyMerchantWithItemResponse{}, nil
+		return NearbyMerchantWithItemResponseAndMeta{}, nil
 	}
 	if offset+limit > len(resp) {
 		cut := offset+limit-len(resp)
 		limit = limit-cut
 	}
+
+	meta := Meta{
+		Limit: limit,
+		Offset: offset,
+		Total: len(resp),
+	}
 	
-	return resp[offset:offset+limit], nil
+	return NearbyMerchantWithItemResponseAndMeta{
+		Data: resp[offset:offset+limit],
+		Meta: meta,
+	}, nil
 }
 
 func (uc *merchantUsecase) CheckMerchantIDs(IDs []string) ([]Merchant, *localError.GlobalError) {

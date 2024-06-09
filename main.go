@@ -5,21 +5,21 @@ import (
 	"belimang/server"
 	"fmt"
 
-	// "log"
+	"log"
 	"log/slog"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 func main() {
 	// Load ENV from OS env or from .env variable
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	db := config.InitDb()
 

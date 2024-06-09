@@ -8,8 +8,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/go-playground/validator/v10"
-	"log"
+	"github.com/go-playground/validator/v10"
+	// "log"
 	"strconv"
 	"strings"
 )
@@ -32,6 +32,7 @@ func (h *merchantHandler) Router(r *gin.RouterGroup) {
 
 	adminGroup.POST("", h.CreateMerchant)
 	adminGroup.POST("/:merchantId/items", h.CreateItem)
+	adminGroup.GET("/:merchantId/items", h.FindItemByMerchant)
 	adminGroup.GET("", h.FindAllMerchants)
 
 	userGroup.GET("/merchants/nearby/:latlong", h.GetLatLong, h.FindNearbyMerchants)
@@ -41,8 +42,19 @@ func (h *merchantHandler) CreateMerchant(ctx *gin.Context) {
 	var request CreateMerchantDTO
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {
+		response.GenerateResponse(ctx, 400)
+		ctx.Abort()
+		return
+	}
+
+	// Validate request
+	validate := validator.New(validator.WithRequiredStructEnabled())
+
+	// Generate error validation if not any field is not valid
+	if err := validate.Struct(request); err != nil {
 		validatorMessage := validation.GenerateStructValidationError(err)
 		response.GenerateResponse(ctx, http.StatusBadRequest, response.WithMessage("Any input is not valid"), response.WithData(validatorMessage))
+		ctx.Abort()
 		return
 	}
 
@@ -53,7 +65,7 @@ func (h *merchantHandler) CreateMerchant(ctx *gin.Context) {
 		return
 	}
 
-	response.GenerateResponse(ctx, 200, response.WithData(*resp))
+	response.GenerateResponseReturnData(ctx, 201, response.WithData(*resp))
 }
 
 func (h *merchantHandler) CreateItem(ctx *gin.Context) {
@@ -61,8 +73,19 @@ func (h *merchantHandler) CreateItem(ctx *gin.Context) {
 	merchantId := ctx.Param("merchantId")
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {
+		response.GenerateResponse(ctx, 400)
+		ctx.Abort()
+		return
+	}
+
+	// Validate request
+	validate := validator.New(validator.WithRequiredStructEnabled())
+
+	// Generate error validation if not any field is not valid
+	if err := validate.Struct(request); err != nil {
 		validatorMessage := validation.GenerateStructValidationError(err)
 		response.GenerateResponse(ctx, http.StatusBadRequest, response.WithMessage("Any input is not valid"), response.WithData(validatorMessage))
+		ctx.Abort()
 		return
 	}
 
@@ -73,7 +96,7 @@ func (h *merchantHandler) CreateItem(ctx *gin.Context) {
 		return
 	}
 
-	response.GenerateResponse(ctx, 200, response.WithData(*resp))
+	response.GenerateResponseReturnData(ctx, 201, response.WithData(*resp))
 }
 
 func (h *merchantHandler) FindAllMerchants(c *gin.Context) {
@@ -90,7 +113,7 @@ func (h *merchantHandler) FindAllMerchants(c *gin.Context) {
 		return
 	}
 
-	response.GenerateResponse(c, http.StatusOK, response.WithMessage("Product fetched successfully!"), response.WithData(merchants))
+	response.GenerateResponseReturnData(c, http.StatusOK, response.WithMessage("Product fetched successfully!"), response.WithData(merchants))
 }
 
 func (h *merchantHandler) FindItemByMerchant(c *gin.Context) {
@@ -111,7 +134,7 @@ func (h *merchantHandler) FindItemByMerchant(c *gin.Context) {
 		return
 	}
 
-	response.GenerateResponse(c, http.StatusOK, response.WithData(items))
+	response.GenerateResponseReturnData(c, http.StatusOK, response.WithData(items))
 }
 
 func (h *merchantHandler) GetLatLong(ctx *gin.Context) {
@@ -173,7 +196,7 @@ func (h *merchantHandler) FindNearbyMerchants(c *gin.Context) {
 		return
 	}
 
-	log.Println(merchants)
+	// log.Println(merchants)
 
-	response.GenerateResponse(c, http.StatusOK, response.WithMessage("Product fetched successfully!"), response.WithData(merchants))
+	response.GenerateResponseReturnData(c, http.StatusOK, response.WithMessage("Product fetched successfully!"), response.WithData(merchants))
 }

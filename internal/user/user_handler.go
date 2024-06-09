@@ -8,7 +8,7 @@ import (
 	"net/http"
 	// "log"
 	"github.com/gin-gonic/gin"
-	// "github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10"
 )
 
 type userHandler struct {
@@ -42,8 +42,19 @@ func (h *userHandler) Login(r UserRole) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var request UserLoginDTO
 		if err := ctx.ShouldBindJSON(&request); err != nil {
+			response.GenerateResponse(ctx, 400)
+			ctx.Abort()
+			return
+		}
+
+		// Validate request
+		validate := validator.New(validator.WithRequiredStructEnabled())
+
+		// Generate error validation if not any field is not valid
+		if err := validate.Struct(request); err != nil {
 			validatorMessage := validation.GenerateStructValidationError(err)
 			response.GenerateResponse(ctx, http.StatusBadRequest, response.WithMessage("Any input is not valid"), response.WithData(validatorMessage))
+			ctx.Abort()
 			return
 		}
 
@@ -60,7 +71,7 @@ func (h *userHandler) Login(r UserRole) gin.HandlerFunc {
 			return
 		}
 
-		response.GenerateResponse(ctx, 200, response.WithData(*resp))
+		response.GenerateResponseReturnData(ctx, 200, response.WithData(*resp))
 	}
 }
 
@@ -68,8 +79,21 @@ func (h *userHandler) Register(r UserRole) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var request UserRegisterDTO
 		if err := ctx.ShouldBindJSON(&request); err != nil {
+			// validatorMessage := validation.GenerateStructValidationError(err)
+			// response.GenerateResponse(ctx, http.StatusBadRequest, response.WithMessage("Any input is not valid"), response.WithData(validatorMessage))
+			response.GenerateResponse(ctx, 400)
+			ctx.Abort()
+			return
+		}
+
+		// Validate request
+		validate := validator.New(validator.WithRequiredStructEnabled())
+
+		// Generate error validation if not any field is not valid
+		if err := validate.Struct(request); err != nil {
 			validatorMessage := validation.GenerateStructValidationError(err)
 			response.GenerateResponse(ctx, http.StatusBadRequest, response.WithMessage("Any input is not valid"), response.WithData(validatorMessage))
+			ctx.Abort()
 			return
 		}
 
@@ -87,6 +111,6 @@ func (h *userHandler) Register(r UserRole) gin.HandlerFunc {
 			return
 		}
 
-		response.GenerateResponse(ctx, 200, response.WithData(*resp))
+		response.GenerateResponseReturnData(ctx, 201, response.WithData(*resp))
 	}
 }
